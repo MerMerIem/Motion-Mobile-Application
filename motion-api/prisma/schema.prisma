@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -12,6 +7,72 @@ datasource db {
   provider = "postgresql"
 }
 
+// ---------- Enums ----------
+
+enum ActivityType {
+  Walking  @map("walking")
+  Running  @map("running")
+  Cycling  @map("cycling")
+  Swimming @map("swimming")
+}
+
+enum MainGoal {
+  Consistency @map("consistency")
+  Endurance   @map("endurance")
+  StayActive  @map("stay_active")
+}
+
+enum ExperienceLevel {
+  Beginner     @map("beginner")
+  Intermediate @map("intermediate")
+  Advanced     @map("advanced")
+}
+
+enum PreferredDays {
+  Monday    @map("monday")
+  Tuesday   @map("tuesday")
+  Wednesday @map("wednesday")
+  Thursday  @map("thursday")
+  Friday    @map("friday")
+  Saturday  @map("saturday")
+  Sunday    @map("sunday")
+}
+
+enum ActivitySource {
+  Gps    @map("gps")
+  Manual @map("manual")
+}
+
+enum EffortLevel {
+  Easy     @map("easy")
+  Moderate @map("moderate")
+  Hard     @map("hard")
+}
+
+enum RecommendationType {
+  Walking  @map("walking")
+  Running  @map("running")
+  Cycling  @map("cycling")
+  Swimming @map("swimming")
+  Rest     @map("rest")
+}
+
+enum RecommendationStatus {
+  Suggested @map("suggested")
+  Planned   @map("planned")
+  Completed @map("completed")
+  Dismissed @map("dismissed")
+}
+
+enum FeedbackType {
+  Helpful      @map("helpful")
+  TooEasy      @map("too_easy")
+  TooDifficult @map("too_difficult")
+  NotSuitable  @map("not_suitable")
+}
+
+// ---------- Models ----------
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -19,7 +80,11 @@ model User {
   displayName  String
   createdAt    DateTime @default(now())
 
-  refreshTokens RefreshToken[]
+  refreshTokens   RefreshToken[]
+  profile         Profile?
+  goal            Goal?
+  activities      Activity[]
+  recommendations Recommendation[]
 
   @@map("users")
 }
@@ -36,4 +101,105 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+model Profile {
+  id                  String           @id @default(uuid())
+  userId              String           @unique
+  mainGoal            MainGoal?
+  experienceLevel     ExperienceLevel?
+  preferredActivities ActivityType[]
+  daysPerWeek         Int?
+  minutesPerSession   Int?
+  preferredDays       PreferredDays[]
+  timezone            String  @default("Africa/Algiers")
+  reminderEnabled     Boolean @default(false)
+  reminderTime        String? // "18:30"
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Goal {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  targetSessions       Int?
+  targetMinutes        Int?
+  targetDistanceMeters Int?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("goals")
+}
+
+model Activity {
+  id                  String         @id @default(uuid())
+  userId              String
+  type                ActivityType
+  source              ActivitySource
+  startedAt           DateTime
+  durationSeconds     Int
+  distanceMeters      Int?
+  elevationGainMeters Int?
+  effort              EffortLevel?
+  note                String?
+  recommendationId    String?
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recommendation   Recommendation? @relation(fields: [recommendationId], references: [id], onDelete: SetNull)
+  route ActivityRoute?
+
+  @@index([userId, startedAt])
+  @@index([recommendationId])
+  @@map("activities")
+}
+
+model ActivityRoute {
+  id         String   @id @default(uuid())
+  activityId String   @unique
+  points     Json
+  createdAt  DateTime @default(now())
+
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@map("activity_routes")
+}
+
+model Recommendation {
+  id              String               @id @default(uuid())
+  userId          String
+  type            RecommendationType
+  durationMinutes Int?
+  distanceMeters  Int?
+  explanation     String
+  status          RecommendationStatus @default(Suggested)
+  source          String @default("baseline")
+  inputSnapshot   Json   @default("{}")
+  activities Activity[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  user     User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedback RecommendationFeedback?
+
+  @@index([userId, createdAt])
+  @@map("recommendations")
+}
+
+model RecommendationFeedback {
+  id               String       @id @default(uuid())
+  recommendationId String       @unique
+  type             FeedbackType
+  createdAt        DateTime     @default(now())
+
+  recommendation Recommendation @relation(fields: [recommendationId], references: [id], onDelete: Cascade)
+
+  @@map("recommendation_feedback")
 }
