@@ -1,5 +1,6 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException  } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { LoginDto } from './dto/login.dto.js';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { createHash, randomBytes } from 'node:crypto';
@@ -36,13 +37,35 @@ export class AuthService {
     return this.issueTokens(user.id, user.email);
   }
 
+  async login(dto: LoginDto): Promise<AuthTokens> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email }, // Zod already trimmed and lowercased it
+    });
+
+    // Same error for "unknown email" and "wrong password"
+    if (!user || !(await argon2.verify(user.passwordHash, dto.password))) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // One session per user: revoke every refresh token still active
+    await this.prisma.refreshToken.updateMany({
+      where: { userId: user.id, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+
+    return this.issueTokens(user.id, user.email);
+  }
+
   // ---------- helpers ----------
 
   private hash(token: string): string {
     return createHash('sha256').update(token).digest('hex');
   }
 
-  private async issueTokens(userId: string, email: string): Promise<AuthTokens>{
+  private async issueTokens(
+    userId: string,
+    email: string,
+  ): Promise<AuthTokens> {
     const accessToken = await this.jwt.signAsync({ sub: userId, email });
 
     const refreshToken = randomBytes(48).toString('hex');
