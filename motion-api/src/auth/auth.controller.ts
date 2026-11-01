@@ -1,11 +1,7 @@
 import {
   Controller,
-  Get,
   Post,
   Body,
-  Patch,
-  Param,
-  Delete,
   HttpCode,
 } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
@@ -23,6 +19,9 @@ import {
 } from '../common/decorators/api-docs.decorator.js';
 import { AuthTokensDto } from './dto/auth-tokens.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { RefreshDto } from './dto/refresh.dto.js';
+import { SuccessDto } from './dto/success.dto.js';
+import type { Success } from './dto/success.dto.js';
 
 @Controller('auth')
 @ApiTags('Authentication')
@@ -48,23 +47,21 @@ export class AuthController {
     return this.auth.login(dto);
   }
 
-  // @Get()
-  // findAll() {
-  //   return this.authService.findAll();
-  // }
+  @Post('refresh')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Swap a refresh token for a new token pair' })
+  @ApiOkResponse({ type: AuthTokensDto })
+  @ApiError(401, 'Invalid, revoked or expired refresh token')
+  refresh(@Body() dto: RefreshDto): Promise<AuthTokens> {
+    return this.auth.refresh(dto.refreshToken);
+  }
 
-  // @Get(':id')
-  // findOne(@Param('id') id: string) {
-  //   return this.authService.findOne(+id);
-  // }
-
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-  //   return this.authService.update(+id, updateAuthDto);
-  // }
-
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.authService.remove(+id);
-  // }
+  @Post('logout')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Revoke the refresh token' })
+  @ApiOkResponse({ type: SuccessDto })
+  @ApiError(401, 'Invalid refresh token')
+  logout(@Body() dto: RefreshDto): Promise<Success> {
+    return this.auth.logout(dto.refreshToken);
+  }
 }
