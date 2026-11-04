@@ -12,6 +12,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import type { AuthTokens } from './dto/auth-tokens.dto.js';
 import type { Success } from './dto/success.dto.js';
+import type { UserResponse } from './dto/user.dto.js';
 
 @Injectable()
 export class AuthService {
@@ -91,6 +92,15 @@ export class AuthService {
       data: { revokedAt: new Date() },
     });
     return { success: true }; // always succeeds, even if the token is unknown
+  }
+
+  async me(userId: string): Promise<UserResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, displayName: true, createdAt: true },
+    });
+    if (!user) throw new UnauthorizedException('User no longer exists');
+    return { ...user, createdAt: user.createdAt.toISOString() };
   }
 
   // ---------- helpers ----------

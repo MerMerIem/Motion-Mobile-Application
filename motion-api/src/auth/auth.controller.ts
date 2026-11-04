@@ -1,4 +1,6 @@
 import {
+  Get,
+  UseGuards,
   Controller,
   Post,
   Body,
@@ -22,6 +24,12 @@ import { LoginDto } from './dto/login.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
 import { SuccessDto } from './dto/success.dto.js';
 import type { Success } from './dto/success.dto.js';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import type { AuthUser } from '../common/decorators/current-user.decorator.js';
+import { ApiProtected } from '../common/decorators/api-docs.decorator.js';
+import { UserDto } from './dto/user.dto.js';
+import type { UserResponse } from './dto/user.dto.js';
 
 @Controller('auth')
 @ApiTags('Authentication')
@@ -63,5 +71,14 @@ export class AuthController {
   @ApiError(401, 'Invalid refresh token')
   logout(@Body() dto: RefreshDto): Promise<Success> {
     return this.auth.logout(dto.refreshToken);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Get the logged-in user' })
+  @ApiOkResponse({ type: UserDto })
+  @ApiProtected()
+  me(@CurrentUser() user: AuthUser): Promise<UserResponse> {
+    return this.auth.me(user.id);
   }
 }
