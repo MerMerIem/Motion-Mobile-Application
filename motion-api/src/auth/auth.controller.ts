@@ -66,7 +66,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Revoke the refresh token' })
+  @ApiOperation({ summary: 'Log out and revoke the refresh token' })
   @ApiOkResponse({ type: SuccessDto })
   @ApiError(401, 'Invalid refresh token')
   logout(@Body() dto: RefreshDto): Promise<Success> {

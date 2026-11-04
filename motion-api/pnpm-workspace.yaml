@@ -2,4 +2,5 @@ allowBuilds:
   '@prisma/engines': false
   '@scarf/scarf': false
   argon2: false
+  msgpackr-extract: false
   prisma: true
