@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { MaintenanceModule } from './maintenance/maintenance.module.js';
 import { ExceptionsFilter } from './common/filters/exceptions.filter.js';
 import { BullModule } from '@nestjs/bullmq';
+import { ProfileModule } from './profile/profile.module.js';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { BullModule } from '@nestjs/bullmq';
     PrismaModule,
     AuthModule,
     MaintenanceModule,
+    ProfileModule,
   ],
   controllers: [AppController],
   providers: [
