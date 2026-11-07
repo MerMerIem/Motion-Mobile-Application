@@ -10,6 +10,7 @@ import { MaintenanceModule } from './maintenance/maintenance.module.js';
 import { ExceptionsFilter } from './common/filters/exceptions.filter.js';
 import { BullModule } from '@nestjs/bullmq';
 import { ProfileModule } from './profile/profile.module.js';
+import { GoalModule } from './goal/goal.module.js';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ProfileModule } from './profile/profile.module.js';
     AuthModule,
     MaintenanceModule,
     ProfileModule,
+    GoalModule,
   ],
   controllers: [AppController],
   providers: [
