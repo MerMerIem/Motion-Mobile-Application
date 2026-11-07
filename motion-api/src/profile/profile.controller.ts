@@ -13,8 +13,8 @@ import {
   ApiValidationError,
 } from '../common/decorators/api-docs.decorator.js';
 
-@Controller('profile')
-@ApiTags('Profile')
+@Controller('profiles')
+@ApiTags('Profiles')
 @UseGuards(JwtAuthGuard)
 @ApiProtected()
 export class ProfileController {

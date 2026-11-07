@@ -11,6 +11,7 @@ import { ExceptionsFilter } from './common/filters/exceptions.filter.js';
 import { BullModule } from '@nestjs/bullmq';
 import { ProfileModule } from './profile/profile.module.js';
 import { GoalModule } from './goal/goal.module.js';
+import { ActivityModule } from './activity/activity.module.js';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { GoalModule } from './goal/goal.module.js';
     MaintenanceModule,
     ProfileModule,
     GoalModule,
+    ActivityModule,
   ],
   controllers: [AppController],
   providers: [
