@@ -62,3 +62,18 @@ export function weekRange(
     end: startOfLocalDay(next.getUTCFullYear(), next.getUTCMonth() + 1, next.getUTCDate(), timeZone),
   };
 }
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+export function localDate(date: Date, timeZone: string): string {
+  const p = zonedParts(date, timeZone);
+  return `${p.y}-${pad(p.m)}-${pad(p.d)}`;
+}
+
+export function weekDays(start: Date, timeZone: string): string[] {
+  const p = zonedParts(start, timeZone);
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(Date.UTC(p.y, p.m - 1, p.d + i));
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  });
+}

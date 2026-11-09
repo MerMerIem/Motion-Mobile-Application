@@ -26,7 +26,7 @@ export class StatsController {
   @Get('weekly')
   @ApiOperation({
     summary:
-      'This week (Sunday to Saturday, in my timezone): totals, per-sport numbers and goal progress',
+      'This week (Sunday to Saturday, in my timezone): totals, per-sport numbers, per-day activities and goal progress',
   })
   @ApiOkResponse({ type: WeeklyStatsDto })
   @ApiValidationError()
