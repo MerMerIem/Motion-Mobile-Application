@@ -12,6 +12,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ProfileModule } from './profile/profile.module.js';
 import { GoalModule } from './goal/goal.module.js';
 import { ActivityModule } from './activity/activity.module.js';
+import { StatsModule } from './stats/stats.module.js';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ActivityModule } from './activity/activity.module.js';
     ProfileModule,
     GoalModule,
     ActivityModule,
+    StatsModule,
   ],
   controllers: [AppController],
   providers: [
