@@ -13,6 +13,7 @@ import { ProfileModule } from './profile/profile.module.js';
 import { GoalModule } from './goal/goal.module.js';
 import { ActivityModule } from './activity/activity.module.js';
 import { StatsModule } from './stats/stats.module.js';
+import { RecommendationModule } from './recommendation/recommendation.module.js';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { StatsModule } from './stats/stats.module.js';
     GoalModule,
     ActivityModule,
     StatsModule,
+    RecommendationModule,
   ],
   controllers: [AppController],
   providers: [

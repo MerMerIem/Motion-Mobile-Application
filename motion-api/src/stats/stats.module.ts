@@ -8,5 +8,6 @@ import { GoalModule } from '../goal/goal.module.js';
   imports: [GoalModule, ProfileModule],
   controllers: [StatsController],
   providers: [StatsService],
+  exports: [StatsService],
 })
 export class StatsModule {}

@@ -35,7 +35,7 @@
     "@prisma/client": "^7.10.1",
     "@scalar/nestjs-api-reference": "^1.2.34",
     "argon2": "^0.45.1",
-    "bullmq": "^6.5.4",
+    "bullmq": "^5.68.0",
     "ioredis": "^6.0.0",
     "nestjs-zod": "^5.5.0",
     "passport": "^0.7.0",
