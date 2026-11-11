@@ -4,8 +4,9 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { ProfileService } from '../profile/profile.service.js';
 import { GoalService } from '../goal/goal.service.js';
 import { StatsService } from '../stats/stats.service.js';
-import { LlmOutputSchema } from './llm/llm-output.schema.js';
-import { SYSTEM_PROMPT } from './llm/prompt.js';
+import { InsightFactsService } from '../insight/insight.service.js';
+import { InsightOutputSchema } from './llm/insight-output.schema.js';
+import { INSIGHT_SYSTEM_PROMPT } from './llm/insight-prompt.js';
 import { applyGuardrails, fallbackRecommendation } from './guardrails.js';
 import {
   RecommendationStatus,
@@ -27,6 +28,7 @@ export class RecommendationService {
     private profiles: ProfileService,
     private goals: GoalService,
     private stats: StatsService,
+    private facts: InsightFactsService,
     @Inject(LLM_PROVIDERS) private providers: LlmProvider[],
     @InjectQueue(RECOMMENDATION_QUEUE) private queue: Queue,
   ) {}
@@ -105,10 +107,13 @@ export class RecommendationService {
     return this.prisma.recommendation.create({
       data: {
         userId,
-        type: output.type,
-        durationMinutes: output.durationMinutes,
-        distanceMeters: output.distanceMeters,
-        explanation: output.explanation,
+        type: output.nextStep.type,
+        durationMinutes: output.nextStep.durationMinutes,
+        distanceMeters: output.nextStep.distanceMeters,
+        explanation: output.nextStep.explanation,
+        title: output.title,
+        summary: output.summary,
+        highlights: output.highlights ?? undefined,
         source,
         inputSnapshot: { hash, context },
       },
@@ -131,18 +136,39 @@ export class RecommendationService {
     try {
       this.logger.log(`Attempt ${attemptsMade + 1}: using ${provider.name}`);
       const raw = await provider.complete(
-        SYSTEM_PROMPT,
+        INSIGHT_SYSTEM_PROMPT,
         JSON.stringify(context),
       );
-      const parsed = LlmOutputSchema.parse(JSON.parse(raw));
-      const safe = applyGuardrails(parsed, guard);
-      if (!safe) throw new Error('Rejected by guardrails');
-      return { output: safe, source: `${provider.name}:${provider.model}` };
+      const parsed = InsightOutputSchema.parse(JSON.parse(raw));
+
+      // the guardrails now check only the "next step" part
+      const safeStep = applyGuardrails(parsed.nextStep, guard);
+      if (!safeStep) throw new Error('Rejected by guardrails');
+
+      return {
+        output: {
+          title: parsed.title,
+          summary: parsed.summary,
+          highlights: parsed.highlights,
+          nextStep: safeStep,
+        },
+        source: `${provider.name}:${provider.model}`,
+      };
     } catch (e) {
       this.logger.warn(`${provider.name} failed: ${(e as Error).message}`);
       if (!isLastAttempt) throw e; // BullMQ retries
     }
-    return { output: fallbackRecommendation(guard), source: 'fallback' };
+
+    // fallback: only the next step for now (we add a template analysis later)
+    return {
+      output: {
+        title: null,
+        summary: null,
+        highlights: null,
+        nextStep: fallbackRecommendation(guard),
+      },
+      source: 'fallback',
+    };
   }
 
   async accept(userId: string, id: string) {
@@ -220,21 +246,11 @@ export class RecommendationService {
       effort: a.effort,
     }));
 
+    const facts = await this.facts.build(userId);
+    if (!facts) return { context: null, guard: null };
+
     const context = {
-      today: new Date().toISOString().slice(0, 10),
-      profile: {
-        mainGoal: profile.mainGoal,
-        experienceLevel: profile.experienceLevel,
-        preferredActivities: profile.preferredActivities,
-        daysPerWeek: profile.daysPerWeek,
-        minutesPerSession: profile.minutesPerSession,
-        preferredDays: profile.preferredDays,
-      },
-      weeklyGoal: goal,
-      thisWeek: {
-        sessions: week.totals.sessions,
-        minutes: Math.floor(week.totals.durationSeconds / 60),
-      },
+      ...facts,
       recentActivities: recent,
       recentFeedback: feedback.map((f) => ({
         about: f.recommendation.type,

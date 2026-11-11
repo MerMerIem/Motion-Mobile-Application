@@ -9,12 +9,14 @@ import { BullModule } from '@nestjs/bullmq';
 import { RECOMMENDATION_QUEUE } from './recommendation.queue.js';
 import { LLM_PROVIDERS, LlmProvider, OpenAiCompatibleClient } from './llm/llm-provider.js';
 import { ConfigService } from '@nestjs/config';
+import { InsightModule } from '../insight/insight.module.js';
 
 @Module({
   imports: [
     ProfileModule,
     GoalModule,
     StatsModule,
+    InsightModule,
     BullModule.registerQueue({ name: RECOMMENDATION_QUEUE }),
   ],
   controllers: [RecommendationController],

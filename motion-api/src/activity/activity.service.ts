@@ -9,7 +9,7 @@ import type {
   ActivityRoute,
   Prisma,
 } from '../generated/prisma/client.js';
-import { ActivitySource } from '../generated/prisma/enums.js';
+import { ActivitySource, RecommendationStatus } from '../generated/prisma/enums.js';
 import type { RoutePoint } from './dto/activity-fields.js';
 import type {
   ActivityDetailResponse,
@@ -33,24 +33,43 @@ export class ActivityService {
       await this.assertRecommendationOwned(userId, dto.recommendationId);
     }
 
-    // Nested create: Activity + ActivityRoute are written in ONE transaction,
-    // so we never end up with a GPS activity without its route.
-    const activity = await this.prisma.activity.create({
-      data: {
-        userId,
-        type: dto.type,
-        source: dto.source,
-        startedAt: new Date(dto.startedAt),
-        durationSeconds: dto.durationSeconds,
-        distanceMeters: dto.distanceMeters,
-        elevationGainMeters: dto.elevationGainMeters,
-        effort: dto.effort,
-        note: dto.note,
-        recommendationId: dto.recommendationId,
-        route: dto.route ? { create: { points: dto.route } } : undefined,
-      },
-      include: { route: true },
+    const activity = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.activity.create({
+        data: {
+          userId,
+          type: dto.type,
+          source: dto.source,
+          startedAt: new Date(dto.startedAt),
+          durationSeconds: dto.durationSeconds,
+          distanceMeters: dto.distanceMeters,
+          elevationGainMeters: dto.elevationGainMeters,
+          effort: dto.effort,
+          note: dto.note,
+          recommendationId: dto.recommendationId,
+          route: dto.route ? { create: { points: dto.route } } : undefined,
+        },
+        include: { route: true },
+      });
+
+      if (dto.recommendationId) {
+        await tx.recommendation.updateMany({
+          where: {
+            id: dto.recommendationId,
+            userId,
+            status: {
+              in: [
+                RecommendationStatus.Suggested,
+                RecommendationStatus.Planned,
+              ],
+            },
+          },
+          data: { status: RecommendationStatus.Completed },
+        });
+      }
+
+      return created;
     });
+
     return this.toDetail(activity);
   }
 

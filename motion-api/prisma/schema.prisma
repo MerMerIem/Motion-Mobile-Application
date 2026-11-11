@@ -66,6 +66,7 @@ enum RecommendationStatus {
 
 enum FeedbackType {
   Helpful      @map("helpful")
+  NotHelpful   @map("not_helpful")
   TooEasy      @map("too_easy")
   TooDifficult @map("too_difficult")
   NotSuitable  @map("not_suitable")
@@ -182,6 +183,9 @@ model Recommendation {
   status          RecommendationStatus @default(Suggested)
   source          String @default("baseline")
   inputSnapshot   Json   @default("{}")
+  title           String?
+  summary         String?
+  highlights      Json?
   activities Activity[]
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt

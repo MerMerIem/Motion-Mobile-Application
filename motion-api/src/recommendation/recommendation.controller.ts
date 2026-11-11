@@ -8,9 +8,9 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiOkResponse } from '@nestjs/swagger';
 import { RecommendationService } from './recommendation.service.js';
-import { FeedbackSchema } from './dto/feedback.dto.js';
+import { FeedbackDto } from './dto/feedback.dto.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import type { AuthUser } from '../common/decorators/current-user.decorator.js';
@@ -32,24 +32,31 @@ export class RecommendationController {
 
   @Post(':id/accept')
   @ApiOperation({ summary: 'Accept a recommendation' })
-  accept(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+  accept(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.service.accept(user.id, id);
   }
 
   @Post(':id/dismiss')
   @ApiOperation({ summary: 'Dismiss a recommendation' })
-  dismiss(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+  dismiss(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     return this.service.dismiss(user.id, id);
   }
 
   @Put(':id/feedback')
   @ApiOperation({ summary: 'Give feedback on a recommendation' })
+  @ApiOkResponse({ type: FeedbackDto })
+  @ApiValidationError()
   feedback(
     @CurrentUser() user: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
+    @Body() dto: FeedbackDto,
   ) {
-    const { type } = FeedbackSchema.parse(body);
-    return this.service.feedback(user.id, id, type);
+    return this.service.feedback(user.id, id, dto.type);
   }
 }
